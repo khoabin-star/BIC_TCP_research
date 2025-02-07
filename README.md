@@ -1,4 +1,4 @@
-##BIC_TCP Project
+<b>BIC_TCP Project<b>
 
 - Explaination of each file:
 - `test_cubic.c`: is a given original file about BIC_TCP problem
