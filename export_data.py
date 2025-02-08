@@ -1,3 +1,5 @@
+import numpy as np # type: ignore
+
 # Original final1 function
 def final1(last_max_cwnd, rtt, x=10):
     return (last_max_cwnd - (410 * ((cubic_root((1 << (10 + 3 * x)) // 410 * (last_max_cwnd - (717 * last_max_cwnd // 1024))) - ((1 << 10) * rtt // 1000)) ** 3) >> (10 + 3 * x)))
@@ -64,5 +66,21 @@ def generate_data_file(filename="output.csv"):
                 # Write data to file
                 file.write(f"{last_max_cwnd},{rtt},{result}\n")
 
+def generate_data_file1(filename="output1.csv", num_samples_cwnd=1000, num_samples_rtt=1000):
+    with open(filename, "w") as file:
+        file.write("last_max_cwnd,rtt,result\n")
+
+       # Generate logarithmic samples
+        last_max_cwnd_values = np.unique(np.geomspace(1, 10000, num=num_samples_cwnd).astype(int))
+        rtt_values = np.unique(np.geomspace(1, 1000, num=num_samples_rtt).astype(int))
+
+        for last_max_cwnd in last_max_cwnd_values:
+            for rtt in rtt_values:
+                result = final1(last_max_cwnd, rtt)
+                file.write(f"{last_max_cwnd},{rtt},{result}\n")
+
+# Run with optimized sampling
+generate_data_file1()
+
 # Run the function to generate the data file
-generate_data_file()
+# generate_data_file()

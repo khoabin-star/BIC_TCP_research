@@ -2,15 +2,21 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
 data = pd.read_csv("output.csv")
 
 # Define the exponential intervals
-intervals = [1, 10, 100, 1000]  # Exponential ranges: [1, 10), [10, 100), [100, 1000]
+intervals = [1, 10, 100, 1000, 10000]  # Exponential ranges: [1, 10), [10, 100), [100, 1000]
 
 # Initialize a dictionary to store the piecewise models and errors
 piecewise_models = {}
+
+# Initialize variables to calculate average MSE
+total_mse = 0
+subregion_count = 0
 
 # Fit piecewise linear models for each subregion
 for i in range(len(intervals) - 1):
@@ -38,14 +44,14 @@ for i in range(len(intervals) - 1):
         model = LinearRegression()
         model.fit(X_train, y_train)
         
-        # Test the model on ALL data points (entire range)
-        X_test = data[["last_max_cwnd", "rtt"]]
-        y_test = data["result"]
-        y_pred = model.predict(X_test)
-        
-        # Calculate the error (Mean Squared Error and R² score) on the entire dataset
-        mse = mean_squared_error(y_test, y_pred)
-        r2 = r2_score(y_test, y_pred)
+        # Calculate in-sample error (MSE and R² score for the same subregion data)
+        y_pred = model.predict(X_train)
+        mse = mean_squared_error(y_train, y_pred)
+        r2 = r2_score(y_train, y_pred)
+
+        # Accumulate MSE for average calculation
+        total_mse += mse
+        subregion_count += 1
         
         # Store the model and error in the dictionary
         piecewise_models[(i, j)] = {
@@ -63,14 +69,21 @@ for (i, j), subregion in piecewise_models.items():
     model = subregion["model"]
     mse = subregion["mse"]
     r2 = subregion["r2"]
-    
+
     # Get the coefficients and intercept of the linear model
     coef_last_max_cwnd, coef_rtt = model.coef_
     intercept = model.intercept_
-    
+
     # Print the equation and error for the subregion
     print(f"Subregion: last_max_cwnd=[{cwnd_lower}, {cwnd_upper}), rtt=[{rtt_lower}, {rtt_upper})")
     print(f"Equation: result = {coef_last_max_cwnd:.6f} * last_max_cwnd + {coef_rtt:.6f} * rtt + {intercept:.6f}")
-    print(f"Mean Squared Error (MSE) on entire dataset: {mse:.6f}")
-    print(f"R² Score on entire dataset: {r2:.6f}")
+    print(f"Mean Squared Error (MSE): {mse:.6f}")
+    print(f"R² Score: {r2:.6f}")
     print("-" * 60)
+
+# Calculate and print the average MSE
+if subregion_count > 0:
+    average_mse = total_mse / subregion_count
+    print(f"Average Mean Squared Error (MSE) across all subregions: {average_mse:.6f}")
+else:
+    print("No sufficient data in any subregion to calculate average MSE.")
