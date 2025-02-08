@@ -9,3 +9,4 @@
 - `equal_range.py`: this file is equal range method when trying to divide the range of the piecewise linear approximation
 - `exponential_range.py`: this file is exponential range method when trying to divide the range of the piecewise linear approximation
 - `adaptive_range.py`: this file is adaptive range method when trying to divide the range of the piecewise linear approximation.
+- 'test'
