@@ -60,18 +60,18 @@ def generate_data_file(filename="output.csv"):
         file.write("last_max_cwnd,rtt,result\n")
         
         # Iterate over last_max_cwnd and rtt
-        for last_max_cwnd in range(1, 10001):
+        for last_max_cwnd in range(1, 1001):
             for rtt in range(1, 1001):
                 result = final1(last_max_cwnd, rtt)
                 # Write data to file
                 file.write(f"{last_max_cwnd},{rtt},{result}\n")
 
-def generate_data_file1(filename="output1.csv", num_samples_cwnd=1000, num_samples_rtt=1000):
+def generate_data_file1(filename="output1.csv", num_samples_cwnd=10000, num_samples_rtt=1000):
     with open(filename, "w") as file:
         file.write("last_max_cwnd,rtt,result\n")
 
        # Generate logarithmic samples
-        last_max_cwnd_values = np.unique(np.geomspace(1, 10000, num=num_samples_cwnd).astype(int))
+        last_max_cwnd_values = np.unique(np.geomspace(1, 100000, num=num_samples_cwnd).astype(int))
         rtt_values = np.unique(np.geomspace(1, 1000, num=num_samples_rtt).astype(int))
 
         for last_max_cwnd in last_max_cwnd_values:
@@ -83,4 +83,4 @@ def generate_data_file1(filename="output1.csv", num_samples_cwnd=1000, num_sampl
 generate_data_file1()
 
 # Run the function to generate the data file
-# generate_data_file()
+#generate_data_file()

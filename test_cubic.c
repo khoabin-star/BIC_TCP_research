@@ -252,8 +252,8 @@ int main()
   // cube_factor = 2^40 / 410
   printf("Here is cube_factor: %llu\n", cube_factor);
 
-  last_max_cwnd = 95;
-  rtt = 95;
+  last_max_cwnd = 54446;
+  rtt = 90;
 
   // Part 2: After a loss event
   cwnd = (last_max_cwnd * beta) / BICTCP_BETA_SCALE;

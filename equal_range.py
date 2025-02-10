@@ -6,13 +6,13 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
-data = pd.read_csv("output.csv")
+data = pd.read_csv("output1.csv")
 
 # Define the number of intervals
 num_intervals = 5
 
 # Create intervals for last_max_cwnd and rtt (1-1000)
-last_max_cwnd_intervals = np.linspace(1, 1000, num_intervals + 1)
+last_max_cwnd_intervals = np.linspace(1, 100000, num_intervals + 1)
 rtt_intervals = np.linspace(1, 1000, num_intervals + 1)
 
 # Round the interval bounds to integers

@@ -6,11 +6,11 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
-data = pd.read_csv("output.csv")
+data = pd.read_csv("output1.csv")
 
 # Define the exponential intervals
-intervals = [1, 10, 100, 1000, 10000]  # Exponential ranges: [1, 10), [10, 100), [100, 1000]
-
+last_cwnd_intervals = [1, 1000, 10000, 100000]  # Exponential ranges: [1, 10), [10, 100), [100, 1000]
+rtt_intervals = [1, 10, 100, 1000] 
 # Initialize a dictionary to store the piecewise models and errors
 piecewise_models = {}
 
@@ -19,11 +19,11 @@ total_mse = 0
 subregion_count = 0
 
 # Fit piecewise linear models for each subregion
-for i in range(len(intervals) - 1):
-    for j in range(len(intervals) - 1):
+for i in range(len(last_cwnd_intervals) - 1):
+    for j in range(len(rtt_intervals) - 1):
         # Define the bounds for the current subregion
-        cwnd_lower, cwnd_upper = intervals[i], intervals[i + 1]
-        rtt_lower, rtt_upper = intervals[j], intervals[j + 1]
+        cwnd_lower, cwnd_upper = last_cwnd_intervals[i], last_cwnd_intervals[i + 1]
+        rtt_lower, rtt_upper = rtt_intervals[j], rtt_intervals[j + 1]
         
         # Filter data for the current subregion (training data)
         subregion_data = data[
