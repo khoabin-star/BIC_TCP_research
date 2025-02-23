@@ -9,8 +9,8 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 data = pd.read_csv("output1.csv")
 
 # Define the exponential intervals
-last_cwnd_intervals = [1, 1000, 10000, 100000]  # Exponential ranges: [1, 10), [10, 100), [100, 1000]
-rtt_intervals = [1, 10, 100, 1000] 
+last_cwnd_intervals = [1, 10, 100, 1000, 5000, 10000]  # Exponential ranges
+rtt_intervals = [1, 10, 100, 400, 700, 1000] 
 # Initialize a dictionary to store the piecewise models and errors
 piecewise_models = {}
 

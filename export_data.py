@@ -66,7 +66,7 @@ def generate_data_file(filename="output.csv"):
                 # Write data to file
                 file.write(f"{last_max_cwnd},{rtt},{result}\n")
 
-def generate_data_file1(filename="output1.csv", num_samples_cwnd=10000, num_samples_rtt=1000):
+def generate_data_file1(filename="output2.csv", num_samples_cwnd=100000, num_samples_rtt=1000):
     with open(filename, "w") as file:
         file.write("last_max_cwnd,rtt,result\n")
 
