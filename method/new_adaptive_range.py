@@ -6,10 +6,10 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
-data = pd.read_csv("output2.csv")
+data = pd.read_csv("../data/output1.csv")
 
 # Define the maximum number of subregions (intervals)
-max_subregions = 25  # You can adjust this number as needed
+max_subregions = 9  # You can adjust this number as needed
 
 # Define initial subregion covering the entire data range
 initial_subregion = {
@@ -26,6 +26,10 @@ initial_subregion = {
 
 # Initialize the list of subregions
 subregions = [initial_subregion]
+
+# Initialize division counters
+cwnd_splits = 0
+rtt_splits = 0
 
 # Total number of subregions (intervals)
 total_subregions = 1
@@ -90,6 +94,8 @@ while total_subregions < max_subregions:
         split_value = (worst_subregion['cwnd_lower'] + worst_subregion['cwnd_upper']) / 2
         left_data = worst_subregion['data'][worst_subregion['data']['last_max_cwnd'] < split_value]
         right_data = worst_subregion['data'][worst_subregion['data']['last_max_cwnd'] >= split_value]
+        # Increment the cwnd_splits counter
+        cwnd_splits += 1
 
         if len(left_data) == 0 or len(right_data) == 0:
             # Cannot split further along this dimension
@@ -116,6 +122,7 @@ while total_subregions < max_subregions:
         split_value = (worst_subregion['rtt_lower'] + worst_subregion['rtt_upper']) / 2
         lower_data = worst_subregion['data'][worst_subregion['data']['rtt'] < split_value]
         upper_data = worst_subregion['data'][worst_subregion['data']['rtt'] >= split_value]
+        rtt_splits += 1
 
         if len(lower_data) == 0 or len(upper_data) == 0:
             # Cannot split further along this dimension
@@ -282,3 +289,8 @@ best_mae_subregion = subregions[min_mae_subregion]
 print(f"Min MAE: {min_mae:.6f} at subregion last_max_cwnd=({best_mae_subregion['cwnd_lower']}, {best_mae_subregion['cwnd_upper']}], rtt=({best_mae_subregion['rtt_lower']}, {best_mae_subregion['rtt_upper']}])")
 best_mape_subregion = subregions[min_mape_subregion]
 print(f"Min MAPE: {min_mape:.6f}% at subregion last_max_cwnd=({best_mape_subregion['cwnd_lower']}, {best_mape_subregion['cwnd_upper']}], rtt=({best_mape_subregion['rtt_lower']}, {best_mape_subregion['rtt_upper']}])")
+
+# Print the number of splits along each dimension
+print(f"Number of splits along last_max_cwnd: {cwnd_splits}")
+print(f"Number of splits along rtt: {rtt_splits}")
+print(f"Final dimensions: {cwnd_splits + 1} x {rtt_splits + 1}")

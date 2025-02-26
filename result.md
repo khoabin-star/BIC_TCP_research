@@ -331,7 +331,7 @@ Accuracy:
 Original:
 (last-max-cwnd, rtt) Time #of branches # full branch # partial branch
 (klee-out-0) (10, 10): 144.57 14 9 5
-(klee-out-1) (50, 50): 67.74 14
+(klee-out-1) (50, 50): 67.74 14 9 5
 (klee-out-2) (100, 100): 32.45 14
 (klee-out-3) (200, 200): 82.97 14
 (klee-out-4) (500, 500): 72.36 14
@@ -411,3 +411,80 @@ Least MAE: 10.598747
 Subregion with Least MAPE:
 Bounds: last_max_cwnd=(84375.0, 87500.0), rtt=(1, 32.1875)
 Least MAPE: 0.023425%
+
+Z3 solver scalability time:
+\*\*Scalability
+Original:
+(last-max-cwnd, rtt) Time #of branches # full branch # partial branch
+(klee-out-28) (10, 10): 2.32
+(klee-out-29) (50, 50): 11.63
+(klee-out-30) (100, 100): 21.16
+(klee-out-31) (200, 200): 54.08
+(klee-out-32) (500, 500): 145.08
+(klee-out-33) (1000, 1000): 221.62
+(klee-out-34) (10000, 1000): 369.87
+
+With the 9 number of interval in adaptive method (1000-1000)
+(last-max-cwnd, rtt) Time # of branch # full branch # partial branch
+(klee-out-35) (10, 10): 0.18 9 0 9
+(klee-out-36) (50, 50): 0.18 9 0 9
+(klee-out-37) (100, 100): 0.18 9 0 9
+(klee-out-38) (200, 200): 0.18 9 0 9
+(klee-out-39) (500, 500): 0.23 9 3 6
+(klee-out-40) (1000, 1000): 0.29 9 8 1
+
+16 interval
+(klee-out-41) (1000, 1000): 0.45 16 15 1
+
+25 interval
+(klee-out-42) (1000, 1000): 0.62 25 24 1
+
+9 interval
+(klee-out-43) (10000, 1000): 0.33 9 8 1
+
+16 interval
+(klee-out-44) (10000, 1000): 0.42 16 15 1
+
+25 interval
+(klee-out-45) (10000, 1000): 0.60 25 24 1
+
+---
+
+last_max_cwnd = 1000
+rtt = 1000
+adaptive method only
+try the following 16 intervals (last_max_cwnd, rtt):
+
+1. 2\*2:
+   Average Mean Squared Error (MSE) across all subregions: 4.206866
+   Average Mean Absolute Error (MAE) across all subregions: 1.568696
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 2.645388%
+
+Max MSE: 5.866336 at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
+Max MAE: 1.912184 at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
+Max MAPE: 5.075453% at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
+
+Min MSE: 2.540184 at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
+Min MAE: 1.200928 at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
+Min MAPE: 0.234427% at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
+
+Number of splits along last_max_cwnd: 1
+Number of splits along rtt: 1
+Final dimensions (intervals): 2 x 2
+
+2. 2\*4:
+
+2*8,
+2*16
+4*2,
+4*4,
+4*8,
+4*16
+8*2,
+8*4,
+8*8,
+8*16
+16*2,
+16*4,
+16*8,
+16*16

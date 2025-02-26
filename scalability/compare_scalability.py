@@ -7,8 +7,8 @@ cases = ['(1000, 1000)', '(10,000, 1000)']
 
 # Running times for each method in both cases
 running_times = {
-    '(1000, 1000)': [118.79, 1.16, 1.01, 1.62],
-    '(10,000, 1000)': [293.89, 0.72, 1.13, 1.49]  # Replace Time_A, Time_B, Time_C with actual values
+    '(1000, 1000)': [221.62, 0.18, 0.45, 0.62],
+    '(10,000, 1000)': [369.87, 0.33, 0.42, 0.60]
 }
 
 # Positions and width for the bars
@@ -22,9 +22,12 @@ fig, ax = plt.subplots(figsize=(10, 6))
 rects1 = ax.bar(x - width/2, running_times['(1000, 1000)'], width, label='(1000, 1000)')
 rects2 = ax.bar(x + width/2, running_times['(10,000, 1000)'], width, label='(10,000, 1000)')
 
+# Set log scale for better visibility of small values
+ax.set_yscale('log')
+
 # Labels and Title
 ax.set_xlabel('Methods')
-ax.set_ylabel('KLEE Running Time (seconds)')
+ax.set_ylabel('KLEE Running Time (seconds, log scale)')
 ax.set_title('Comparison of KLEE Running Times for Original and Adaptive Methods')
 ax.set_xticks(x)
 ax.set_xticklabels(methods, rotation=45)

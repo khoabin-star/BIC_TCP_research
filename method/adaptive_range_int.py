@@ -6,17 +6,17 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
-data = pd.read_csv("output2.csv")
+data = pd.read_csv("../data/output.csv")
 
 # Define the maximum number of subregions
-max_subregions = 36
+max_subregions = 9
 
 # Initialize the subregions
 subregions = [
-    {"cwnd_bounds": (1, 50000), "rtt_bounds": (1, 500)},
-    {"cwnd_bounds": (1, 50000), "rtt_bounds": (500, 1000)},
-    {"cwnd_bounds": (50000, 100000), "rtt_bounds": (1, 500)},
-    {"cwnd_bounds": (50000, 100000), "rtt_bounds": (500, 1000)},
+    {"cwnd_bounds": (1, 500), "rtt_bounds": (1, 500)},
+    {"cwnd_bounds": (1, 500), "rtt_bounds": (500, 1000)},
+    {"cwnd_bounds": (500, 1000), "rtt_bounds": (1, 500)},
+    {"cwnd_bounds": (500, 1000), "rtt_bounds": (500, 1000)},
 ]
 
 # Function to fit a model and calculate integer-based errors for a subregion

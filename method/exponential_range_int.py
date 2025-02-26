@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 # Read the data from the CSV file
-data = pd.read_csv("output2.csv")
+data = pd.read_csv("../data/output.csv")
 
 # Define the number of intervals
 num_intervals = 5

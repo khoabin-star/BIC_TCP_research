@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-data = pd.read_csv("output.csv")
+data = pd.read_csv("../data/output.csv")
 
 # Define the maximum number of subregions
 max_subregions = 9
