@@ -456,35 +456,81 @@ adaptive method only
 try the following 16 intervals (last_max_cwnd, rtt):
 
 1. 2\*2:
-   Average Mean Squared Error (MSE) across all subregions: 4.206866
-   Average Mean Absolute Error (MAE) across all subregions: 1.568696
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 2.645388%
-
-Max MSE: 5.866336 at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
-Max MAE: 1.912184 at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
-Max MAPE: 5.075453% at subregion last_max_cwnd=(1, 500.5], rtt=(1, 500.5])
-
-Min MSE: 2.540184 at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
-Min MAE: 1.200928 at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
-Min MAPE: 0.234427% at subregion last_max_cwnd=(500.5, 1000], rtt=(1, 500.5])
-
-Number of splits along last_max_cwnd: 1
-Number of splits along rtt: 1
-Final dimensions (intervals): 2 x 2
+   Average Mean Squared Error (MSE) across all subregions: 4.326182
+   Average Mean Absolute Error (MAE) across all subregions: 1.626318
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 2.664426%
 
 2. 2\*4:
+   Average Mean Squared Error (MSE) across all subregions: 1.856685
+   Average Mean Absolute Error (MAE) across all subregions: 1.060319
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.758618%
 
-2*8,
-2*16
-4*2,
-4*4,
-4*8,
-4*16
-8*2,
-8*4,
-8*8,
-8*16
-16*2,
-16*4,
-16*8,
-16*16
+3. 2\*8
+   Average Mean Squared Error (MSE) across all subregions: 1.178810
+   Average Mean Absolute Error (MAE) across all subregions: 0.803314
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.450334%
+
+4. 2\*16
+   Average Mean Squared Error (MSE) across all subregions: 1.079323
+   Average Mean Absolute Error (MAE) across all subregions: 0.764579
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.354831%
+
+5. 4\*2:
+   Average Mean Squared Error (MSE) across all subregions: 1.630499
+   Average Mean Absolute Error (MAE) across all subregions: 0.995900
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.486386%
+
+6. 4\*4:
+   Average Mean Squared Error (MSE) across all subregions: 0.751400
+   Average Mean Absolute Error (MAE) across all subregions: 0.621049
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.975970%
+
+7. 4\*8:
+   Average Mean Squared Error (MSE) across all subregions: 0.669000
+   Average Mean Absolute Error (MAE) across all subregions: 0.590850
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.788833%
+
+8. 4\*16:
+   Average Mean Squared Error (MSE) across all subregions: 0.638678
+   Average Mean Absolute Error (MAE) across all subregions: 0.574893
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.752350%
+
+9. 8\*2:
+   Average Mean Squared Error (MSE) across all subregions: 0.857370
+   Average Mean Absolute Error (MAE) across all subregions: 0.694971
+   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.882202%
+
+10. 8\*4:
+    Average Mean Squared Error (MSE) across all subregions: 0.624116
+    Average Mean Absolute Error (MAE) across all subregions: 0.561496
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.609083%
+
+11. 8\*8:
+    Average Mean Squared Error (MSE) across all subregions: 0.564410
+    Average Mean Absolute Error (MAE) across all subregions: 0.524930
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.507937%
+
+12. 8\*16:
+    Average Mean Squared Error (MSE) across all subregions: 0.568938
+    Average Mean Absolute Error (MAE) across all subregions: 0.536440
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.492735%
+
+13. 16\*2:
+    Average Mean Squared Error (MSE) across all subregions: 0.618001
+    Average Mean Absolute Error (MAE) across all subregions: 0.566312
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.599563%
+
+14. 16\*4:
+    Average Mean Squared Error (MSE) across all subregions: 0.604457
+    Average Mean Absolute Error (MAE) across all subregions: 0.561902
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.465424%
+
+15. 16\*8:
+    Average Mean Squared Error (MSE) across all subregions: 0.570903
+    Average Mean Absolute Error (MAE) across all subregions: 0.537245
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.417246%
+
+16. 16\*16:
+    Average Mean Squared Error (MSE) across all subregions: 0.580921
+    Average Mean Absolute Error (MAE) across all subregions: 0.544672
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.415736%

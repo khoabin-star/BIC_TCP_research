@@ -4,6 +4,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import warnings
 import os
+import subprocess
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 #Define your parameter here
@@ -157,74 +158,43 @@ while total_subregions < max_subregions:
             }
             subregion['mse'] = mse_int
             subregion['mae'] = mae_int
-            subregion['mape'] = mape_int  #avergae weighted error.
+            subregion['mape'] = mape_int 
             subregion['model_fitted'] = True
 
     # Identify the subregion with the highest MSE
     worst_subregion = max(subregions, key=lambda x: x['mse'] if x['mse'] is not None else -np.inf)
 
-    # Check if the worst subregion can be subdivided
     if len(worst_subregion['data']) < 2 or worst_subregion['mse'] == np.inf:
-        # Cannot subdivide further
         break
 
-    # Subdivide the worst subregion
-    # Decide which dimension to split based on data range
-    cwnd_range = worst_subregion['cwnd_upper'] - worst_subregion['cwnd_lower']
-    rtt_range = worst_subregion['rtt_upper'] - worst_subregion['rtt_lower']
-
-    if cwnd_range >= rtt_range:
-        # Split along last_max_cwnd
-        split_value = (worst_subregion['cwnd_lower'] + worst_subregion['cwnd_upper']) / 2
+    if np.abs(worst_subregion['model']['coef_last_max_cwnd']) >= np.abs(worst_subregion['model']['coef_rtt']):
+        split_value = worst_subregion['data']['last_max_cwnd'].median()
         left_data = worst_subregion['data'][worst_subregion['data']['last_max_cwnd'] < split_value]
         right_data = worst_subregion['data'][worst_subregion['data']['last_max_cwnd'] >= split_value]
-
-        if len(left_data) == 0 or len(right_data) == 0:
-            # Cannot split further along this dimension
-            break
-
-        left_subregion = {
-            'cwnd_lower': worst_subregion['cwnd_lower'],
-            'cwnd_upper': split_value,
-            'rtt_lower': worst_subregion['rtt_lower'],
-            'rtt_upper': worst_subregion['rtt_upper'],
-            'data': left_data,
-            'model_fitted': False,
-        }
-        right_subregion = {
-            'cwnd_lower': split_value,
-            'cwnd_upper': worst_subregion['cwnd_upper'],
-            'rtt_lower': worst_subregion['rtt_lower'],
-            'rtt_upper': worst_subregion['rtt_upper'],
-            'data': right_data,
-            'model_fitted': False,
-        }
     else:
-        # Split along rtt
-        split_value = (worst_subregion['rtt_lower'] + worst_subregion['rtt_upper']) / 2
-        lower_data = worst_subregion['data'][worst_subregion['data']['rtt'] < split_value]
-        upper_data = worst_subregion['data'][worst_subregion['data']['rtt'] >= split_value]
+        split_value = worst_subregion['data']['rtt'].median()
+        left_data = worst_subregion['data'][worst_subregion['data']['rtt'] < split_value]
+        right_data = worst_subregion['data'][worst_subregion['data']['rtt'] >= split_value]
 
-        if len(lower_data) == 0 or len(upper_data) == 0:
-            # Cannot split further along this dimension
-            break
+    if len(left_data) == 0 or len(right_data) == 0:
+        break
 
-        left_subregion = {
-            'cwnd_lower': worst_subregion['cwnd_lower'],
-            'cwnd_upper': worst_subregion['cwnd_upper'],
-            'rtt_lower': worst_subregion['rtt_lower'],
-            'rtt_upper': split_value,
-            'data': lower_data,
-            'model_fitted': False,
-        }
-        right_subregion = {
-            'cwnd_lower': worst_subregion['cwnd_lower'],
-            'cwnd_upper': worst_subregion['cwnd_upper'],
-            'rtt_lower': split_value,
-            'rtt_upper': worst_subregion['rtt_upper'],
-            'data': upper_data,
-            'model_fitted': False,
-        }
+    left_subregion = {
+        'cwnd_lower': worst_subregion['cwnd_lower'] if np.abs(worst_subregion['model']['coef_last_max_cwnd']) >= np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['cwnd_lower'],
+        'cwnd_upper': split_value if np.abs(worst_subregion['model']['coef_last_max_cwnd']) >= np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['cwnd_upper'],
+        'rtt_lower': worst_subregion['rtt_lower'] if np.abs(worst_subregion['model']['coef_last_max_cwnd']) < np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['rtt_lower'],
+        'rtt_upper': split_value if np.abs(worst_subregion['model']['coef_last_max_cwnd']) < np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['rtt_upper'],
+        'data': left_data,
+        'model_fitted': False,
+    }
+    right_subregion = {
+        'cwnd_lower': split_value if np.abs(worst_subregion['model']['coef_last_max_cwnd']) >= np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['cwnd_lower'],
+        'cwnd_upper': worst_subregion['cwnd_upper'],
+        'rtt_lower': split_value if np.abs(worst_subregion['model']['coef_last_max_cwnd']) < np.abs(worst_subregion['model']['coef_rtt']) else worst_subregion['rtt_lower'],
+        'rtt_upper': worst_subregion['rtt_upper'],
+        'data': right_data,
+        'model_fitted': False,
+    }
 
     # Remove the worst subregion and add the new ones
     subregions.remove(worst_subregion)
@@ -277,6 +247,7 @@ for subregion in subregions:
 total_mse = 0
 total_mae = 0
 total_mape = 0
+total_weighted_mape = 0
 
 # Variables to track highest errors
 max_mse = -np.inf
@@ -309,6 +280,7 @@ for index, subregion in enumerate(subregions):
     total_mse += mse
     total_mae += mae
     total_mape += mape
+    total_weighted_mape += mae * (subregion['cwnd_upper'] - subregion['cwnd_lower']) * (subregion['rtt_upper'] - subregion['rtt_lower'])
 
     # Update max errors if needed
     if mse > max_mse:
@@ -349,9 +321,11 @@ if len(subregions) > 0:
     average_mse = total_mse / len(subregions)
     average_mae = total_mae / len(subregions)
     average_mape = total_mape / len(subregions)
+    average_weighted_mae = total_weighted_mape / (x_range * y_range)
     print(f"Average Mean Squared Error (MSE) across all subregions: {average_mse:.6f}")
     print(f"Average Mean Absolute Error (MAE) across all subregions: {average_mae:.6f}")
     print(f"Average Mean Absolute Percentage Error (MAPE) across all subregions: {average_mape:.6f}%")
+    print(f"Average Weighted Absolute Error across all subregions: {average_weighted_mae:.6f}")
 else:
     print("No subregions to calculate average errors.")
 
@@ -383,7 +357,7 @@ def generate_c_conditions(subregions):
         condition = f"""
 if (last_max_cwnd >= {cwnd_lower} && last_max_cwnd < {cwnd_upper} &&
     rtt >= {rtt_lower} && rtt < {rtt_upper}) {{
-    result = {int(coef['coef_last_max_cwnd'])} * last_max_cwnd + {int(coef['coef_rtt'])} * rtt + {int(coef['intercept'])};
+    bic_target = ({int(coef['coef_last_max_cwnd'])} * last_max_cwnd + {int(coef['coef_rtt'])} * rtt + {int(coef['intercept'])}) / 1000;
 }}
 """
         if i > 0:
@@ -391,11 +365,18 @@ if (last_max_cwnd >= {cwnd_lower} && last_max_cwnd < {cwnd_upper} &&
         
         conditions.append(condition)
 
-    # Optional: Automatically make the last region "else"
+    # Automatically convert the last condition to "else" without any condition
     if len(conditions) > 0:
-        conditions[-1] = conditions[-1].replace("else if", "else")
+        last_condition = f"""
+else {{
+    bic_target = ({int(subregions[-1]['model']['coef_last_max_cwnd'])} * last_max_cwnd + {int(subregions[-1]['model']['coef_rtt'])} * rtt + {int(subregions[-1]['model']['intercept'])}) / 1000;
+}}
+"""
+        conditions[-1] = last_condition
 
     return "\n".join(conditions)
+
+
 
 
 def insert_conditions_into_template(conditions, template_file_path="./template.c", output_file_path="./output_with_conditions.c"):
@@ -413,3 +394,53 @@ def insert_conditions_into_template(conditions, template_file_path="./template.c
 # Generate the conditions and insert them into the template
 c_conditions = generate_c_conditions(subregions)
 insert_conditions_into_template(c_conditions)
+
+def run_klee_on_output():
+    c_file_path = "output_with_conditions.c"
+    bc_file_path = "output_with_conditions.bc"
+    klee_out_dir = "klee-out-46"
+
+    # Compile the C file into LLVM bitcode
+    subprocess.run(["clang", "-I", "../../include", "-emit-llvm", "-c", "-g", "-O0", c_file_path, "-o", bc_file_path])
+
+    # Run KLEE on the bitcode file
+    subprocess.run(["klee", "--solver-backend=z3", bc_file_path])
+
+    # Collect KLEE stats
+    klee_stats_output = subprocess.run(["klee-stats", "--print-all", klee_out_dir], capture_output=True, text=True).stdout
+    stats = parse_klee_stats(klee_stats_output)
+
+    print("KLEE Scalability Metrics:")
+    print(f"States: {stats.get('States')}")
+    print(f"Time(s): {stats.get('Time(s)')}")
+    print(f"Instrs: {stats.get('Instrs')}")
+    print(f"Mem(MiB): {stats.get('Mem(MiB)')}")
+
+    # Clean up temporary files
+    subprocess.run(["rm", bc_file_path])
+
+def parse_klee_stats(stats_output):
+    lines = stats_output.split("\n")
+    if len(lines) < 4:
+        return {}
+
+    header_line = lines[1]
+    data_line = lines[3]
+
+    headers = [header.strip() for header in header_line.split("|")[1:-1]]
+    data_values = [data.strip() for data in data_line.split("|")[1:-1]]
+
+    return dict(zip(headers, data_values))
+
+def clear_klee_output_directories():
+    directory = "."  # Current directory
+    directories = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
+
+    for dir_name in directories:
+        if dir_name.startswith("klee-out-") or dir_name == "klee-last":
+            dir_path = os.path.join(directory, dir_name)
+            subprocess.run(["rm", "-r", dir_path])
+
+if __name__ == "__main__":
+    # clear_klee_output_directories()
+    run_klee_on_output()
