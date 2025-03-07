@@ -455,82 +455,248 @@ rtt = 1000
 adaptive method only
 try the following 16 intervals (last_max_cwnd, rtt):
 
-1. 2\*2:
-   Average Mean Squared Error (MSE) across all subregions: 4.326182
-   Average Mean Absolute Error (MAE) across all subregions: 1.626318
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 2.664426%
+1.  2\*2:
+    Average Mean Squared Error (MSE) across all subregions: 4.326182
+    Average Mean Absolute Error (MAE) across all subregions: 1.626318
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 2.664426%
 
-2. 2\*4:
-   Average Mean Squared Error (MSE) across all subregions: 1.856685
-   Average Mean Absolute Error (MAE) across all subregions: 1.060319
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.758618%
+    Scalability:
+    KLEE: done: total instructions = 144
+    KLEE: done: completed paths = 4
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 4
+    KLEE Scalability Metrics:
+    States: 4
+    Time(s): 0.19
+    Instrs: 144
+    Mem(MiB): 20.45
 
-3. 2\*8
-   Average Mean Squared Error (MSE) across all subregions: 1.178810
-   Average Mean Absolute Error (MAE) across all subregions: 0.803314
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.450334%
+2.  2\*4:
+    Average Mean Squared Error (MSE) across all subregions: 1.856685
+    Average Mean Absolute Error (MAE) across all subregions: 1.060319
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.758618%
 
-4. 2\*16
-   Average Mean Squared Error (MSE) across all subregions: 1.079323
-   Average Mean Absolute Error (MAE) across all subregions: 0.764579
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.354831%
+    scalability:
+    KLEE: done: total instructions = 252
+    KLEE: done: completed paths = 8
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 8
+    KLEE Scalability Metrics:
+    States: 8
+    Time(s): 0.26
+    Instrs: 252
+    Mem(MiB): 20.58
 
-5. 4\*2:
-   Average Mean Squared Error (MSE) across all subregions: 1.630499
-   Average Mean Absolute Error (MAE) across all subregions: 0.995900
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.486386%
+3.  2\*8
+    Average Mean Squared Error (MSE) across all subregions: 1.178810
+    Average Mean Absolute Error (MAE) across all subregions: 0.803314
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.450334%
 
-6. 4\*4:
-   Average Mean Squared Error (MSE) across all subregions: 0.751400
-   Average Mean Absolute Error (MAE) across all subregions: 0.621049
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.975970%
+    scalability:
+    KLEE: done: total instructions = 468
+    KLEE: done: completed paths = 16
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 16
+    KLEE Scalability Metrics:
+    States: 16
+    Time(s): 0.47
+    Instrs: 468
+    Mem(MiB): 20.85
 
-7. 4\*8:
-   Average Mean Squared Error (MSE) across all subregions: 0.669000
-   Average Mean Absolute Error (MAE) across all subregions: 0.590850
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.788833%
+4.  2\*16
+    Average Mean Squared Error (MSE) across all subregions: 1.079323
+    Average Mean Absolute Error (MAE) across all subregions: 0.764579
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.354831%
 
-8. 4\*16:
-   Average Mean Squared Error (MSE) across all subregions: 0.638678
-   Average Mean Absolute Error (MAE) across all subregions: 0.574893
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.752350%
+    scalability:
+    KLEE: done: total instructions = 900
+    KLEE: done: completed paths = 32
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 32
+    KLEE Scalability Metrics:
+    States: 32
+    Time(s): 0.82
+    Instrs: 900
+    Mem(MiB): 21.46
 
-9. 8\*2:
-   Average Mean Squared Error (MSE) across all subregions: 0.857370
-   Average Mean Absolute Error (MAE) across all subregions: 0.694971
-   Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.882202%
+5.  4\*2:
+    Average Mean Squared Error (MSE) across all subregions: 1.630499
+    Average Mean Absolute Error (MAE) across all subregions: 0.995900
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 1.486386%
+
+    scalability:
+    KLEE: done: total instructions = 252
+    KLEE: done: completed paths = 8
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 8
+    KLEE Scalability Metrics:
+    States: 8
+    Time(s): 0.27
+    Instrs: 252
+    Mem(MiB): 20.59
+
+6.  4\*4:
+    Average Mean Squared Error (MSE) across all subregions: 0.751400
+    Average Mean Absolute Error (MAE) across all subregions: 0.621049
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.975970%
+
+    scalability
+    KLEE: done: total instructions = 468
+    KLEE: done: completed paths = 16
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 16
+    KLEE Scalability Metrics:
+    States: 16
+    Time(s): 0.45
+    Instrs: 468
+    Mem(MiB): 20.88
+
+7.  4\*8:
+    Average Mean Squared Error (MSE) across all subregions: 0.669000
+    Average Mean Absolute Error (MAE) across all subregions: 0.590850
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.788833%
+
+    KLEE: done: total instructions = 900
+    KLEE: done: completed paths = 32
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 32
+    KLEE Scalability Metrics:
+    States: 32
+    Time(s): 0.82
+    Instrs: 900
+    Mem(MiB): 21.38
+
+8.  4\*16:
+    Average Mean Squared Error (MSE) across all subregions: 0.638678
+    Average Mean Absolute Error (MAE) across all subregions: 0.574893
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.752350%
+
+    KLEE: done: total instructions = 1764
+    KLEE: done: completed paths = 64
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 64
+    KLEE Scalability Metrics:
+    States: 64
+    Time(s): 1.56
+    Instrs: 1764
+    Mem(MiB): 22.47
+
+9.  8\*2:
+    Average Mean Squared Error (MSE) across all subregions: 0.857370
+    Average Mean Absolute Error (MAE) across all subregions: 0.694971
+    Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.882202%
+
+    KLEE: done: total instructions = 468
+    KLEE: done: completed paths = 16
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 16
+    KLEE Scalability Metrics:
+    States: 16
+    Time(s): 0.46
+    Instrs: 468
+    Mem(MiB): 20.88
 
 10. 8\*4:
     Average Mean Squared Error (MSE) across all subregions: 0.624116
     Average Mean Absolute Error (MAE) across all subregions: 0.561496
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.609083%
 
+KLEE: done: total instructions = 900
+KLEE: done: completed paths = 32
+KLEE: done: partially completed paths = 0
+KLEE: done: generated tests = 32
+KLEE Scalability Metrics:
+States: 32
+Time(s): 0.77
+Instrs: 900
+Mem(MiB): 21.41
+
 11. 8\*8:
     Average Mean Squared Error (MSE) across all subregions: 0.564410
     Average Mean Absolute Error (MAE) across all subregions: 0.524930
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.507937%
+
+    KLEE: done: total instructions = 1764
+    KLEE: done: completed paths = 64
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 64
+    KLEE Scalability Metrics:
+    States: 64
+    Time(s): 1.59
+    Instrs: 1764
+    Mem(MiB): 22.40
 
 12. 8\*16:
     Average Mean Squared Error (MSE) across all subregions: 0.568938
     Average Mean Absolute Error (MAE) across all subregions: 0.536440
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.492735%
 
+    KLEE: done: total instructions = 3492
+    KLEE: done: completed paths = 128
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 128
+    KLEE Scalability Metrics:
+    States: 128
+    Time(s): 3.54
+    Instrs: 3492
+    Mem(MiB): 25.36
+
 13. 16\*2:
     Average Mean Squared Error (MSE) across all subregions: 0.618001
     Average Mean Absolute Error (MAE) across all subregions: 0.566312
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.599563%
+
+    KLEE: done: total instructions = 900
+    KLEE: done: completed paths = 32
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 32
+    KLEE Scalability Metrics:
+    States: 32
+    Time(s): 0.90
+    Instrs: 900
+    Mem(MiB): 21.41
 
 14. 16\*4:
     Average Mean Squared Error (MSE) across all subregions: 0.604457
     Average Mean Absolute Error (MAE) across all subregions: 0.561902
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.465424%
 
+    KLEE: done: total instructions = 1764
+    KLEE: done: completed paths = 64
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 64
+    KLEE Scalability Metrics:
+    States: 64
+    Time(s): 1.63
+    Instrs: 1764
+    Mem(MiB): 22.47
+
 15. 16\*8:
     Average Mean Squared Error (MSE) across all subregions: 0.570903
     Average Mean Absolute Error (MAE) across all subregions: 0.537245
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.417246%
 
+    KLEE: done: total instructions = 3492
+    KLEE: done: completed paths = 128
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 128
+    KLEE Scalability Metrics:
+    States: 128
+    Time(s): 3.54
+    Instrs: 3492
+    Mem(MiB): 25.45
+
 16. 16\*16:
     Average Mean Squared Error (MSE) across all subregions: 0.580921
     Average Mean Absolute Error (MAE) across all subregions: 0.544672
     Average Mean Absolute Percentage Error (MAPE) across all subregions: 0.415736%
+
+    KLEE: done: total instructions = 6948
+    KLEE: done: completed paths = 256
+    KLEE: done: partially completed paths = 0
+    KLEE: done: generated tests = 256
+    KLEE Scalability Metrics:
+    States: 256
+    Time(s): 8.94
+    Instrs: 6948
+    Mem(MiB): 33.16
