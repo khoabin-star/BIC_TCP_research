@@ -12,20 +12,20 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # ============================================================
 x_range = 100        # last_max_cwnd in [1, 100]
 y_range = 10000      # rtt in [1, 10000]
-mape_threshold = 9.5   # MAPE threshold for stopping the adaptive subdivision
+mape_threshold = 10   # MAPE threshold for stopping the adaptive subdivision
 output_file = "../data/data_generated_test.csv"
 
 # ------------------------------------------------------------
 # Original functions from your code
 # ------------------------------------------------------------
-# def input_function(last_max_cwnd, rtt, x=10):
-#     return (last_max_cwnd - (410 * ((cubic_root((1 << (10 + 3 * x)) // 410 * (last_max_cwnd - (717 * last_max_cwnd // 1024))) - ((1 << 10) * rtt // 1000)) ** 3) >> (10 + 3 * x)))
+def input_function(last_max_cwnd, rtt, x=10):
+    return (last_max_cwnd - (410 * ((cubic_root((1 << (10 + 3 * x)) // 410 * (last_max_cwnd - (717 * last_max_cwnd // 1024))) - ((1 << 10) * rtt // 1000)) ** 3) >> (10 + 3 * x)))
 
-def input_function(x, y):
-    """
-    The function to approximate.
-    """
-    return x - 0.4 * np.float_power(np.float_power(0.75 * x, 1.0 / 3.0) - y / 1000.0, 3)
+# def input_function(x, y):
+#     """
+#     The function to approximate.
+#     """
+#     return x - 0.4 * np.float_power(np.float_power(0.75 * x, 1.0 / 3.0) - y / 1000.0, 3)
 
 def cubic_root(a):
     v = [
@@ -123,7 +123,7 @@ def plot_subregions(subregions, iteration):
         err_text = f"{sr['mape']:.1f}%" if sr['mape'] is not None else "N/A"
         ax.text(center_cwnd, center_rtt, err_text, ha='center', va='center', fontsize=8, color='red')
     ax.set_xlim(0, x_range + 1)
-    ax.set_ylim(0, y_range + 1000)
+    ax.set_ylim(0, y_range + 1)
     plt.xlabel("last_max_cwnd")
     plt.ylabel("rtt")
     plt.title(f"Iteration {iteration}: Current Subregions")
@@ -167,9 +167,9 @@ def fit_model_for_subregion(subregion):
 # Initial subregion covering the entire domain
 initial_subregion = {
     'cwnd_lower': data['last_max_cwnd'].min(),
-    'cwnd_upper': data['last_max_cwnd'].max() + 1,  # using an exclusive upper bound
+    'cwnd_upper': data['last_max_cwnd'].max(),  # using an exclusive upper bound
     'rtt_lower': data['rtt'].min(),
-    'rtt_upper': data['rtt'].max() + 1,
+    'rtt_upper': data['rtt'].max(),
     'data': data.copy(),
     'model_fitted': False,
     'mse': None,
