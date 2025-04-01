@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+import matplotlib.cm as cm
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -12,20 +15,20 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # ============================================================
 x_range = 100        # last_max_cwnd in [1, 100]
 y_range = 10000      # rtt in [1, 10000]
-mape_threshold = 10   # MAPE threshold for stopping the adaptive subdivision
+mape_threshold = 20   # MAPE threshold for stopping the adaptive subdivision
 output_file = "../data/data_generated_test.csv"
 
 # ------------------------------------------------------------
 # Original functions from your code
 # ------------------------------------------------------------
-def input_function(last_max_cwnd, rtt, x=10):
-    return (last_max_cwnd - (410 * ((cubic_root((1 << (10 + 3 * x)) // 410 * (last_max_cwnd - (717 * last_max_cwnd // 1024))) - ((1 << 10) * rtt // 1000)) ** 3) >> (10 + 3 * x)))
+# def input_function(last_max_cwnd, rtt, x=10):
+#     return (last_max_cwnd - (410 * ((cubic_root((1 << (10 + 3 * x)) // 410 * (last_max_cwnd - (717 * last_max_cwnd // 1024))) - ((1 << 10) * rtt // 1000)) ** 3) >> (10 + 3 * x)))
 
-# def input_function(x, y):
-#     """
-#     The function to approximate.
-#     """
-#     return x - 0.4 * np.float_power(np.float_power(0.75 * x, 1.0 / 3.0) - y / 1000.0, 3)
+def input_function(x, y):
+    """
+    The function to approximate.
+    """
+    return x - 0.4 * np.float_power(np.float_power(0.75 * x, 1.0 / 3.0) - y / 1000.0, 3)
 
 def cubic_root(a):
     v = [
@@ -99,7 +102,6 @@ def generate_data_file(filename=output_file):
                 result = input_function(last_max_cwnd, rtt)
                 file.write(f"{last_max_cwnd},{rtt},{result}\n")
 
-# Uncomment to regenerate data if needed.
 generate_data_file()
 
 # Read generated data
@@ -139,18 +141,23 @@ def fit_model_for_subregion(subregion):
         return
     model = LinearRegression()
     model.fit(X, y)
-    coef_last_max_cwnd = int(round(model.coef_[0] * 1000))
-    coef_rtt = int(round(model.coef_[1] * 1000))
-    intercept = int(round(model.intercept_ * 1000))
+    coef_last_max_cwnd = model.coef_[0]
+    coef_rtt = model.coef_[1]
+    intercept = model.intercept_
     # Compute integer-based predictions
-    y_pred_int = (coef_last_max_cwnd * X["last_max_cwnd"] + coef_rtt * X["rtt"] + intercept) // 1000
+    y_pred_int = (coef_last_max_cwnd * X["last_max_cwnd"] + coef_rtt * X["rtt"] + intercept)
     mse_int = mean_squared_error(y, y_pred_int)
     mae_int = mean_absolute_error(y, y_pred_int)
    # Compute per-row MAPE (handle zero y values)
     per_row_mape = np.abs((y - y_pred_int) / np.where(y != 0, y, np.nan)) * 100
     # Assign the computed per-row error back to the data
     subregion["data"] = subregion["data"].assign(mape=per_row_mape)
-    mape_int = np.nanmean(per_row_mape)
+    # take the average MAPE in the subregion.
+    # mape_int = np.nanmean(per_row_mape)
+
+    # Instead of averaging, take the maximum (worst-case) MAPE in the subregion.
+    mape_int = np.nanmax(per_row_mape)
+
     subregion['model'] = {
         'coef_last_max_cwnd': coef_last_max_cwnd,
         'coef_rtt': coef_rtt,
@@ -180,9 +187,6 @@ initial_subregion = {
 subregions = [initial_subregion]
 iteration = 0
 
-# Plot initial subregion
-# plot_subregions(subregions, iteration)
-
 while True:
     # Fit models for subregions that haven't been processed
     for subregion in subregions:
@@ -191,7 +195,7 @@ while True:
     
     # Identify the subregion with the worst MAPE
     worst_subregion = max(subregions, key=lambda x: x['mape'] if x['mape'] is not None else -np.inf)
-
+    # print("Here is worst subregion", worst_subregion)
 
     # Stop if worst MAPE is below threshold
     if worst_subregion['mape'] <= mape_threshold:
@@ -201,7 +205,7 @@ while True:
     # Compute error variation along both axes within the worst subregion
     x_gradient = compute_error_variation(worst_subregion['data'], 'last_max_cwnd')
     y_gradient = compute_error_variation(worst_subregion['data'], 'rtt')
-    print(f"Error variation: last_max_cwnd = {x_gradient}, rtt = {y_gradient}")
+    # print(f"Error variation: last_max_cwnd = {x_gradient}, rtt = {y_gradient}")
     
     # Split along the axis with the larger error variation using the median
     if x_gradient >= y_gradient:
@@ -215,7 +219,7 @@ while True:
         left_data = worst_subregion['data'][worst_subregion['data']['rtt'] < split_value]
         right_data = worst_subregion['data'][worst_subregion['data']['rtt'] >= split_value]
     
-    print(f"Splitting worst subregion along {split_axis} at {split_value}")
+    # print(f"Splitting worst subregion along {split_axis} at {split_value}")
     
     # If either side is empty, stop subdividing this region
     if len(left_data) == 0 or len(right_data) == 0:
@@ -274,11 +278,17 @@ while True:
     # Remove the worst subregion and add the two new ones
     subregions.remove(worst_subregion)
     subregions.extend([left_subregion, right_subregion])
-    
     iteration += 1
 
 plot_subregions(subregions, iteration)
-# print("Here is final subregions", subregions)
+
+# ------------------------------------------------------------
+# Final Reporting: Print total number of subregions (rectangles) and max mape
+# ------------------------------------------------------------
+total_subregions = len(subregions)
+print(f"Total number of subregions (rectangles): {total_subregions}")
+max_mape = max(sr['mape'] for sr in subregions if sr['mape'] is not None)
+print(f"Maximum MAPE among all subregions: {max_mape:.6f}%")
 
 # ============================================================
 # Final Model Fitting & Reporting
@@ -296,9 +306,8 @@ for idx, sr in enumerate(subregions):
     print(f"MAPE: {sr['mape']:.6f}%")
     print("-" * 60)
 
-
 # ------------------------------------------------------------
-# Updated snippet for color map creation
+# Updated snippet for color map creation (2D) remains the same
 # ------------------------------------------------------------
 # Extract unique boundaries from final subregions
 x_bounds = sorted(set([sr['cwnd_lower'] for sr in subregions] + [sr['cwnd_upper'] for sr in subregions]))
@@ -307,7 +316,10 @@ y_bounds = sorted(set([sr['rtt_lower'] for sr in subregions] + [sr['rtt_upper'] 
 # Create meshgrid for pcolormesh (grid corners)
 X, Y = np.meshgrid(x_bounds, y_bounds)
 
-# Initialize the error matrix with NaN
+# Initialize a result matrix (Z) that will store the approximation value for each cell center
+Z = np.zeros((len(y_bounds) - 1, len(x_bounds) - 1), dtype=float)
+
+# Initialize the error matrix with NaN (for the 2D error colormap)
 errors = np.full((len(y_bounds) - 1, len(x_bounds) - 1), np.nan)
 
 # Fill each cell with the subregion's MAPE if the entire cell is inside that subregion
@@ -325,17 +337,89 @@ for sr in subregions:
                 cell_y_low >= sr['rtt_lower'] and cell_y_high <= sr['rtt_upper']):
                 errors[i, j] = sr['mape']
 
+# Plot 2D error colormap (remains unchanged)
 plt.figure(figsize=(15, 10))
 plt.pcolormesh(X, Y, errors, shading='auto', cmap='coolwarm')
 plt.colorbar(label="Error (%)")
-
-# Optionally, overlay grid points at the centers of each subregion
 for sr in subregions:
     center_x = (sr['cwnd_lower'] + sr['cwnd_upper']) / 2
     center_y = (sr['rtt_lower'] + sr['rtt_upper']) / 2
     plt.scatter(center_x, center_y, color='black', s=10)
-    
 plt.title("Error color of each rectangle")
 plt.xlabel("cwnd")
 plt.ylabel("rtt")
 plt.show()
+
+# ------------------------------------------------------------
+# 3D Surface Plot: Populate Z with the piecewise linear approximation
+# ------------------------------------------------------------
+# For each cell defined by adjacent boundaries, calculate the cell center
+# and use the subregion's model that covers that center to compute the prediction.
+for i in range(len(y_bounds) - 1):
+    for j in range(len(x_bounds) - 1):
+        cell_x = (x_bounds[j] + x_bounds[j+1]) / 2
+        cell_y = (y_bounds[i] + y_bounds[i+1]) / 2
+        
+        # For each subregion, check if the cell center is contained within it.
+        for sr in subregions:
+            if (sr['cwnd_lower'] <= cell_x <= sr['cwnd_upper'] and 
+                sr['rtt_lower'] <= cell_y <= sr['rtt_upper']):
+                coef = sr['model']
+                # Use the model to predict the value at (cell_x, cell_y).
+                
+                # Here, we assume no additional integer scaling is applied.
+                pred = coef['coef_last_max_cwnd'] * cell_x + coef['coef_rtt'] * cell_y + coef['intercept']
+                Z[i, j] = pred
+                break
+
+# 3D Surface Plot
+fig = plt.figure(figsize=(15, 10))
+ax = fig.add_subplot(111, projection='3d')
+# Create a new meshgrid for plotting the surface; here X_plot, Y_plot must correspond to the centers of the cells.
+# However, using the boundaries (x_bounds, y_bounds) is also common practice.
+X_plot, Y_plot = np.meshgrid(x_bounds, y_bounds)
+ax.plot_surface(X_plot, Y_plot, np.pad(Z, ((0,1),(0,1)), mode='edge'), cmap='viridis', edgecolor='k', alpha=0.8)
+ax.set_title("3D Visualization of Piecewise Linear Approximation")
+ax.set_xlabel("last_max_cwnd")
+ax.set_ylabel("rtt")
+ax.set_zlabel("result")
+plt.show()
+
+fig = plt.figure(figsize=(15, 10))
+ax = fig.add_subplot(111, projection='3d')
+
+for sr in subregions:
+    # Get subregion boundaries
+    x1 = sr['cwnd_lower']
+    x2 = sr['cwnd_upper']
+    y1 = sr['rtt_lower']
+    y2 = sr['rtt_upper']
+    coef = sr['model']
+    # Compute the predicted value at each corner using the subregion's linear model
+    z11 = coef['coef_last_max_cwnd'] * x1 + coef['coef_rtt'] * y1 + coef['intercept']
+    z12 = coef['coef_last_max_cwnd'] * x1 + coef['coef_rtt'] * y2 + coef['intercept']
+    z22 = coef['coef_last_max_cwnd'] * x2 + coef['coef_rtt'] * y2 + coef['intercept']
+    z21 = coef['coef_last_max_cwnd'] * x2 + coef['coef_rtt'] * y1 + coef['intercept']
+    
+    # Create a polygon with the four corners
+    verts = [[(x1, y1, z11), (x1, y2, z12), (x2, y2, z22), (x2, y1, z21)]]
+    poly = Poly3DCollection(verts, alpha=0.7, edgecolor='k')
+    
+    # Map the subregion's MAPE (normalized) to a color using the 'viridis' colormap.
+    # For example, if sr['mape'] is lower, it will be one color; if higher, another.
+    # Normalize the value between 0 and 1.
+    norm_val = sr['mape'] / max_mape if max_mape > 0 else 0.0
+    face_color = cm.viridis(norm_val)
+    poly.set_facecolor(face_color)
+    
+    ax.add_collection3d(poly)
+
+ax.set_xlabel("last_max_cwnd")
+ax.set_ylabel("rtt")
+ax.set_zlabel("result")
+ax.set_xlim3d(1, 100)
+ax.set_ylim3d(1, 10000)
+ax.set_zlim3d(1, 300)
+ax.set_title("3D Visualization with Exact Subregion Boundaries")
+plt.show()
+
