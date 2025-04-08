@@ -700,3 +700,64 @@ Mem(MiB): 21.41
     Time(s): 8.94
     Instrs: 6948
     Mem(MiB): 33.16
+
+
+---- In case of 100, 10000
+1. Cascading if-else (unsorted)
+
+KLEE: done: total instructions = 981
+KLEE: done: completed paths = 35
+KLEE: done: partially completed paths = 0
+KLEE: done: generated tests = 35
+KLEE Scalability Metrics:
+States: 35
+Time(s): 0.68
+Instrs: 981
+Mem(MiB): 18.67
+---------------------------------------------------------------------------
+|    Path    |  Instrs|  Time(s)|  ICov(%)|  BCov(%)|  ICount|  TSolver(%)|
+---------------------------------------------------------------------------
+|klee-out-46/|     981|     0.68|    99.74|    98.57|     779|       93.01|
+---------------------------------------------------------------------------
+
+2. Cascading if-else (sorted by area by ascending from small to large )
+
+KLEE: done: total instructions = 981
+KLEE: done: completed paths = 35
+KLEE: done: partially completed paths = 0
+KLEE: done: generated tests = 35
+KLEE Scalability Metrics:
+States: 35
+Time(s): 0.69
+Instrs: 981
+Mem(MiB): 18.66
+klee@89d4187f9ecb:~/code$ klee-stats klee-out-46/
+klee@89d4187f9ecb:~/code$ klee-stats klee-out-46/
+---------------------------------------------------------------------------
+|    Path    |  Instrs|  Time(s)|  ICov(%)|  BCov(%)|  ICount|  TSolver(%)|
+---------------------------------------------------------------------------
+|klee-out-46/|     981|     0.69|    99.74|    98.57|     779|       92.72|
+---------------------------------------------------------------------------
+
+
+3. Cascading if-else (sorted by area by descending from large to small )
+
+KLEE: done: total instructions = 981
+KLEE: done: completed paths = 35
+KLEE: done: partially completed paths = 0
+KLEE: done: generated tests = 35
+KLEE Scalability Metrics:
+States: 35
+Time(s): 0.67
+Instrs: 981
+Mem(MiB): 18.67
+klee@89d4187f9ecb:~/code$ klee-stats klee-out-46/
+---------------------------------------------------------------------------
+|    Path    |  Instrs|  Time(s)|  ICov(%)|  BCov(%)|  ICount|  TSolver(%)|
+---------------------------------------------------------------------------
+|klee-out-46/|     981|     0.67|    99.74|    98.57|     779|       92.51|
+---------------------------------------------------------------------------
+
+------In case of 
+#define MAX_X 10000
+#define MAX_Y 10000

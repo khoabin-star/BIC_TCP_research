@@ -226,7 +226,7 @@ while True:
         print("One side of the split is empty. Stopping further subdivision for this subregion.")
         worst_subregion['mape'] = 0  # Force the threshold condition
         continue
-    plot_subregions(subregions, iteration)
+    #plot_subregions(subregions, iteration)
     # Create new subregions based on the chosen split axis
     if split_axis == 'last_max_cwnd':
         left_subregion = {
@@ -280,7 +280,7 @@ while True:
     subregions.extend([left_subregion, right_subregion])
     iteration += 1
 
-plot_subregions(subregions, iteration)
+#plot_subregions(subregions, iteration)
 
 # ------------------------------------------------------------
 # Final Reporting: Print total number of subregions (rectangles) and max mape
@@ -423,3 +423,228 @@ ax.set_zlim3d(1, 300)
 ax.set_title("3D Visualization with Exact Subregion Boundaries")
 plt.show()
 
+# ============================================================
+# Method 1: Cascading if-else conditions in C code
+def generate_c_conditions(subregions):
+    conditions = []
+    for i, subregion in enumerate(subregions):
+        coef = subregion['model']
+        cwnd_lower = int(subregion['cwnd_lower'])  # Round down
+        cwnd_upper = int(subregion['cwnd_upper'])  # Round up
+        rtt_lower = int(subregion['rtt_lower'])  # Round down
+        rtt_upper = int(subregion['rtt_upper'])  # Round up
+        
+        condition = f"""
+if (last_max_cwnd >= {cwnd_lower} && last_max_cwnd < {cwnd_upper} &&
+    rtt >= {rtt_lower} && rtt < {rtt_upper}) {{
+    bic_target = ({int(coef['coef_last_max_cwnd'])} * last_max_cwnd + {int(coef['coef_rtt'])} * rtt + {int(coef['intercept'])}) / 1000;
+}}
+"""
+        if i > 0:
+            condition = condition.replace("if", "else if")
+        
+        conditions.append(condition)
+
+    # Automatically convert the last condition to "else" without any condition
+    if len(conditions) > 0:
+        last_condition = f"""
+else {{
+    bic_target = ({int(subregions[-1]['model']['coef_last_max_cwnd'])} * last_max_cwnd + {int(subregions[-1]['model']['coef_rtt'])} * rtt + {int(subregions[-1]['model']['intercept'])}) / 1000;
+}}
+"""
+        conditions[-1] = last_condition
+
+    return "\n".join(conditions)
+
+def generate_c_conditions_sorted(subregions):
+    # Sort subregions by area: smaller region first.
+    sorted_subregions = sorted(subregions, key=lambda sr: (sr['cwnd_upper'] - sr['cwnd_lower']) * (sr['rtt_upper'] - sr['rtt_lower']))
+    
+    conditions = []
+    for i, subregion in enumerate(sorted_subregions):
+        coef = subregion['model']
+        # Convert boundaries to int; adjust rounding as needed.
+        cwnd_lower = int(subregion['cwnd_lower'])
+        cwnd_upper = int(subregion['cwnd_upper'])
+        rtt_lower = int(subregion['rtt_lower'])
+        rtt_upper = int(subregion['rtt_upper'])
+        
+        condition = f"""
+if (last_max_cwnd >= {cwnd_lower} && last_max_cwnd < {cwnd_upper} &&
+    rtt >= {rtt_lower} && rtt < {rtt_upper}) {{
+    bic_target = ({int(coef['coef_last_max_cwnd'])} * last_max_cwnd + {int(coef['coef_rtt'])} * rtt + {int(coef['intercept'])}) / 1000;
+}}
+"""
+        if i > 0:
+            condition = condition.replace("if", "else if", 1)
+        conditions.append(condition)
+    
+    # Optionally, change the last condition to a plain "else" clause.
+    if conditions:
+        last_condition = f"""
+else {{
+    bic_target = ({int(sorted_subregions[-1]['model']['coef_last_max_cwnd'])} * last_max_cwnd + {int(sorted_subregions[-1]['model']['coef_rtt'])} * rtt + {int(sorted_subregions[-1]['model']['intercept'])}) / 1000;
+}}
+"""
+        conditions[-1] = last_condition
+    
+    return "\n".join(conditions)
+
+def generate_c_conditions_sorted_desc(subregions):
+    # Sort subregions by area (largest first).
+    sorted_subregions = sorted(subregions, key=lambda sr: (sr['cwnd_upper'] - sr['cwnd_lower']) * (sr['rtt_upper'] - sr['rtt_lower']), reverse=True)
+    
+    conditions = []
+    for i, subregion in enumerate(sorted_subregions):
+        coef = subregion['model']
+        cwnd_lower = int(subregion['cwnd_lower'])
+        cwnd_upper = int(subregion['cwnd_upper'])
+        rtt_lower = int(subregion['rtt_lower'])
+        rtt_upper = int(subregion['rtt_upper'])
+        
+        condition = f"""
+if (last_max_cwnd >= {cwnd_lower} && last_max_cwnd < {cwnd_upper} &&
+    rtt >= {rtt_lower} && rtt < {rtt_upper}) {{
+    bic_target = ({int(coef['coef_last_max_cwnd'])} * last_max_cwnd + {int(coef['coef_rtt'])} * rtt + {int(coef['intercept'])}) / 1000;
+}}
+"""
+        if i > 0:
+            condition = condition.replace("if", "else if", 1)
+        conditions.append(condition)
+    
+    # Optionally, change the last condition to a plain "else" clause.
+    if conditions:
+        last_condition = f"""
+else {{
+    bic_target = ({int(sorted_subregions[-1]['model']['coef_last_max_cwnd'])} * last_max_cwnd + {int(sorted_subregions[-1]['model']['coef_rtt'])} * rtt + {int(sorted_subregions[-1]['model']['intercept'])}) / 1000;
+}}
+"""
+        conditions[-1] = last_condition
+    
+    return "\n".join(conditions)
+
+
+def insert_conditions_into_template(conditions, template_file_path="./template.c", output_file_path="./output_with_conditions.c"):
+    with open(template_file_path, "r") as template_file:
+        template_code = template_file.read()
+
+    # Insert the conditions into the template
+    code_with_conditions = template_code.replace("// INSERT_CONDITIONS_HERE", conditions)
+
+    # Write the result to a new file
+    with open(output_file_path, "w") as output_file:
+        output_file.write(code_with_conditions)
+
+
+# Generate the conditions and insert them into the template
+c_conditions = generate_c_conditions_sorted(subregions)
+# insert_conditions_into_template(c_conditions)
+
+## ============================================================
+## Method 2: Array‐of‐structures with a binary search lookup
+# def generate_c_array(subregions):
+#     lines = []
+#     lines.append("typedef struct {")
+#     lines.append("    int cwnd_lower, cwnd_upper;")
+#     lines.append("    int rtt_lower, rtt_upper;")
+#     lines.append("    int coef_last_max_cwnd;")
+#     lines.append("    int coef_rtt;")
+#     lines.append("    int intercept;")
+#     lines.append("} Subregion;")
+#     lines.append("")
+#     lines.append("Subregion subregions[] = {")
+#     for sr in subregions:
+#         coef = sr['model']
+#         cwnd_lower = int(sr['cwnd_lower'])
+#         cwnd_upper = int(sr['cwnd_upper'])
+#         rtt_lower = int(sr['rtt_lower'])
+#         rtt_upper = int(sr['rtt_upper'])
+#         c0 = int(coef['coef_last_max_cwnd'])
+#         c1 = int(coef['coef_rtt'])
+#         intercept = int(coef['intercept'])
+#         lines.append(f"    {{{cwnd_lower}, {cwnd_upper}, {rtt_lower}, {rtt_upper}, {c0}, {c1}, {intercept}}},")
+#     lines.append("};")
+#     lines.append("")
+#     lines.append("int num_subregions = sizeof(subregions) / sizeof(Subregion);")
+#     return "\n".join(lines)
+
+# def generate_c_linear_search_lookup():
+#     code = """
+# int find_subregion(int last_max_cwnd, int rtt) {
+#     for (int i = 0; i < num_subregions; i++) {
+#         if (last_max_cwnd >= subregions[i].cwnd_lower &&
+#             last_max_cwnd < subregions[i].cwnd_upper &&
+#             rtt >= subregions[i].rtt_lower &&
+#             rtt < subregions[i].rtt_upper) {
+#             return i;
+#         }
+#     }
+#     return -1; // No matching subregion found
+# }
+# """
+#     return code
+
+# def insert_c_array_into_template(c_array_code, search_code, template_file_path="./template1.c", output_file_path="./output_with_c_array.c"):
+#     with open(template_file_path, "r") as template_file:
+#         template_code = template_file.read()
+
+#     # Replace placeholders in your template with the generated C code segments.
+#     code_with_array = template_code.replace("// INSERT_SUBREGION_ARRAY_HERE", c_array_code)
+#     code_with_all = code_with_array.replace("// INSERT_BINARY_SEARCH_HERE", search_code)
+
+#     with open(output_file_path, "w") as output_file:
+#         output_file.write(code_with_all)
+
+# c_array = generate_c_array(subregions)
+# search_code = generate_c_linear_search_lookup()
+# insert_c_array_into_template(c_array, search_code)
+
+def merge_subregions(sr1, sr2):
+    """
+    Merge two subregions by taking the union of their boundaries
+    and concatenating their data.
+    """
+    merged_sr = {}
+    # Boundaries: take the min of lower bounds and the max of upper bounds.
+    merged_sr['cwnd_lower'] = min(sr1['cwnd_lower'], sr2['cwnd_lower'])
+    merged_sr['cwnd_upper'] = max(sr1['cwnd_upper'], sr2['cwnd_upper'])
+    merged_sr['rtt_lower'] = min(sr1['rtt_lower'], sr2['rtt_lower'])
+    merged_sr['rtt_upper'] = max(sr1['rtt_upper'], sr2['rtt_upper'])
+    # Concatenate the dataframes from both subregions:
+    merged_sr['data'] = pd.concat([sr1['data'], sr2['data']], ignore_index=True)
+    
+    # Reset the model and error metrics
+    merged_sr['model_fitted'] = False
+    merged_sr['mse'] = None
+    merged_sr['mae'] = None
+    merged_sr['mape'] = None
+    return merged_sr
+
+
+# For the manual merge, we extract them (here we use indices 24 and 34 if zero-indexed).
+sr25 = subregions[24]
+sr35 = subregions[34]
+
+# Merge the two subregions.
+merged_sr = merge_subregions(sr25, sr35)
+# The merged subregion should now have:
+# last_max_cwnd: [min(25.5, 50.5) = 25.5, max(50.5, 100) = 100]
+# rtt: [min(2500.5, 2500.5) = 2500.5, max(5000.5, 5000.5) = 5000.5]
+
+# Fit the linear model for the merged subregion (using your existing function)
+fit_model_for_subregion(merged_sr)
+
+# Print the results for the merged subregion:
+print("Merged Subregion:")
+print(f"last_max_cwnd=({merged_sr['cwnd_lower']}, {merged_sr['cwnd_upper']}], "
+      f"rtt=({merged_sr['rtt_lower']}, {merged_sr['rtt_upper']}])")
+merged_model = merged_sr['model']
+print(f"Equation: result = ({merged_model['coef_last_max_cwnd']}*last_max_cwnd + "
+      f"{merged_model['coef_rtt']}*rtt + {merged_model['intercept']})/1000")
+print(f"MAPE: {merged_sr['mape']:.6f}%")
+
+# Check if below threshold:
+if merged_sr['mape'] <= mape_threshold:
+    print("Merged subregion MAPE is below the threshold.")
+else:
+    print("Merged subregion MAPE exceeds the threshold.")

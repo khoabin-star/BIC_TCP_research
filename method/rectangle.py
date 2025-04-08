@@ -60,7 +60,8 @@ def plane_interpolation(a0, a1, a2, x, y):
 ###############################################################################
 def compute_errors(X, Y, f_values):
     """
-    Computes the approximation error for each rectangular cell.
+    Computes the maximum percentage error (MAPE) for each rectangular cell 
+    by evaluating the error at all four corners of the rectangle.
     """
     num_x, num_y = X.shape
     errors = np.zeros((num_x - 1, num_y - 1))
@@ -71,15 +72,23 @@ def compute_errors(X, Y, f_values):
             y_vals = (Y[i, j], Y[i, j+1])
             f_vals = (f_values[i, j], f_values[i, j+1], f_values[i+1, j], f_values[i+1, j+1])
 
-            # Compute plane coefficients
+            # Compute plane coefficients using the four corners
             a0, a1, a2 = compute_plane_coefficients(x_vals, y_vals, f_vals)
 
-            # Compute error at the center of the rectangle
-            x_mid = (x_vals[0] + x_vals[1]) / 2
-            y_mid = (y_vals[0] + y_vals[1]) / 2
-            f_true = f(x_mid, y_mid)
-            f_approx = plane_interpolation(a0, a1, a2, x_mid, y_mid)
-            errors[i, j] = abs(f_true - f_approx) / (abs(f_true) + 1e-6) * 100  # Percentage error
+            # Evaluate the error at all four corners of the rectangle
+            corner_points = [
+                (X[i, j], Y[i, j]),
+                (X[i, j+1], Y[i, j+1]),
+                (X[i+1, j], Y[i+1, j]),
+                (X[i+1, j+1], Y[i+1, j+1])
+            ]
+            corner_errors = []
+            for (x_pt, y_pt) in corner_points:
+                f_true = f(x_pt, y_pt)
+                f_approx = plane_interpolation(a0, a1, a2, x_pt, y_pt)
+                error = abs(f_true - f_approx) / (abs(f_true) + 1e-6) * 100
+                corner_errors.append(error)
+            errors[i, j] = max(corner_errors)
 
     return errors
 
