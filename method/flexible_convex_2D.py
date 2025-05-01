@@ -13,43 +13,86 @@ from functools import lru_cache
 x1, x2 = sp.symbols('x1 x2')
 
 class MathFuncExtractor(c_ast.NodeVisitor):
-    """Extracts and converts the C 'math' function into Sympy."""
+    """
+    1) Finds the first FuncDef with exactly two parameters.
+    2) Builds a sympy.Symbol for each parameter.
+    3) Processes local Decl statements (with initializers) into a symbol table.
+    4) Converts the final Return expr into a Sympy expression.
+    """
     def __init__(self):
         self.sympy_expr = None
+        self.env = {}           # maps C-names -> Sympy expressions
+        self.param_syms = []    # will hold the two Sympy symbols
+
     def visit_FuncDef(self, node):
-        if node.decl.name == 'math':
-            for stmt in node.body.block_items:
-                if isinstance(stmt, c_ast.Return):
-                    self.sympy_expr = self._to_sympy(stmt.expr)
-                    return
+        # Only pick the first 2-arg function
+        proto = node.decl.type
+        params = proto.args.params if proto.args else []
+        if len(params) != 2 or self.sympy_expr is not None:
+            return
+
+        # Create sympy symbols for these two parameters
+        names = [p.name for p in params]
+        syms  = sp.symbols(' '.join(names))
+        self.param_syms = syms
+        # seed env so that _to_sympy can look them up
+        for name, sym in zip(names, syms):
+            self.env[name] = sym
+
+        # process each statement in order
+        for stmt in node.body.block_items:
+            if isinstance(stmt, c_ast.Decl) and stmt.init is not None:
+                # e.g. double a = x * 2;
+                self.env[stmt.name] = self._to_sympy(stmt.init)
+            elif isinstance(stmt, c_ast.Return):
+                self.sympy_expr = self._to_sympy(stmt.expr)
+                return  # stop after see the return
+
     def _to_sympy(self, node):
+        # Binary operations
         if isinstance(node, c_ast.BinaryOp):
-            L, R = self._to_sympy(node.left), self._to_sympy(node.right)
-            return {'+': L+R, '-': L-R, '*': L*R, '/': L/R}[node.op]
+            L = self._to_sympy(node.left)
+            R = self._to_sympy(node.right)
+            return {'+': L + R,
+                    '-': L - R,
+                    '*': L * R,
+                    '/': L / R}[node.op]
+
+        # Float or integer literal
         if isinstance(node, c_ast.Constant):
             return sp.Float(node.value)
+
+        # Identifier: either a parameter or a local var
         if isinstance(node, c_ast.ID):
-            return {'x1': x1, 'x2': x2}[node.name]
+            if node.name in self.env:
+                return self.env[node.name]
+            raise ValueError(f"Unknown identifier '{node.name}'")
+
+        # Function calls: pow, cbrt, etc.
         if isinstance(node, c_ast.FuncCall):
             fn = node.name.name
             args = [self._to_sympy(a) for a in node.args.exprs]
-            if fn == 'pow': return args[0]**int(args[1])
-            elif fn == 'cbrt': return args[0] ** sp.Rational(1,3)
-            raise NotImplementedError(f"Unsupported '{fn}'")
-        raise NotImplementedError(type(node))
+            if fn == 'pow':
+                return args[0] ** args[1]
+            if fn == 'cbrt':
+                return args[0] ** sp.Rational(1, 3)
+            # add more here: sin, cos, exp, ...
+            raise NotImplementedError(f"Unsupported function '{fn}'")
+
+        raise NotImplementedError(f"Cannot handle AST node {type(node)}")
 
 def load_c_math_function(filename: str) -> sp.Expr:
     ast = parse_file(filename, use_cpp=True)
-    ext = MathFuncExtractor()
-    ext.visit(ast)
-    if ext.sympy_expr is None:
-        raise ValueError("No 'math' function found.")
-    return ext.sympy_expr
+    extractor = MathFuncExtractor()
+    extractor.visit(ast)
+    if extractor.sympy_expr is None:
+        raise ValueError("No two‐arg function found in C file.")
+    return extractor.sympy_expr
 
 # ---------------------- Dynamic Function Loading ----------------------
-if len(sys.argv) < 2:
-    print("Usage: python script.py <math_c_file.c>")
-    sys.exit(1)
+# if len(sys.argv) < 2:
+#     print("Usage: python script.py <math_c_file.c>")
+#     sys.exit(1)
 
 c_file = sys.argv[1]
 t_f_expr = load_c_math_function(c_file)
@@ -198,7 +241,56 @@ def plot_final_approximation(final_leaves):
     ax.set_xlabel("x1"); ax.set_ylabel("x2"); ax.set_zlabel("f(x)")
     plt.tight_layout(); plt.show()
 
+def generate_c_conditions(final_leaves):
+    import re
+    lower, upper = [], []
+
+    # --- Lower bound conditions ---
+    lower.append("// Lower bound conditions")
+    for i, rep in enumerate(final_leaves):
+        a1, b1, a2, b2 = rep['range']
+        prefix = 'if' if i == 0 else 'else if'
+        cond = (f"{prefix} (last_max_cwnd >= {a1:.2f} && "
+                f"last_max_cwnd < {b1:.2f} && "
+                f"rtt >= {a2:.2f} && rtt < {b2:.2f})")
+        # generate C code for the lower‐plane and truncate floats to 2 decimal places
+        Lc = sp.ccode(
+            rep['lower_expr']
+               .subs({x1: sp.Symbol('last_max_cwnd'),
+                      x2: sp.Symbol('rtt')})
+        )
+        Lc = re.sub(r'(-?\d+\.\d{2})\d*', r'\1', Lc)
+        lower.append(f"{cond} {{\n    bic_target = {Lc};\n}}")
+
+    # --- Upper bound conditions ---
+    upper.append("// Upper bound conditions")
+    for i, rep in enumerate(final_leaves):
+        a1, b1, a2, b2 = rep['range']
+        prefix = 'if' if i == 0 else 'else if'
+        cond = (f"{prefix} (last_max_cwnd >= {a1:.2f} && "
+                f"last_max_cwnd < {b1:.2f} && "
+                f"rtt >= {a2:.2f} && rtt < {b2:.2f})")
+        Uc = sp.ccode(
+            rep['upper_expr']
+               .subs({x1: sp.Symbol('last_max_cwnd'),
+                      x2: sp.Symbol('rtt')})
+        )
+        Uc = re.sub(r'(-?\d+\.\d{2})\d*', r'\1', Uc)
+        upper.append(f"{cond} {{\n    bic_target = {Uc};\n}}")
+
+    # Convert the very last 'else if' into 'else'
+    if len(lower) > 1:
+        lower[-1] = lower[-1].replace('else if', 'else', 1)
+    if len(upper) > 1:
+        upper[-1] = upper[-1].replace('else if', 'else', 1)
+
+    # Combine the two blocks with a blank line in between
+    return "\n".join(lower + [""] + upper)
+    
 if __name__ == '__main__':
+    if len(sys.argv)!=3:
+        print("Usage: script.py <math_c_file.c> <template.c>"); sys.exit(1)
+    math_c, template = sys.argv[1], sys.argv[2]
     heap, leaves = [], []
     root = (X_MIN, X_MAX, Y_MIN, Y_MAX)
     r_ape, r_ae, lp, up, pt, lfn, ufn = max_error_info(*root)
@@ -219,30 +311,30 @@ if __name__ == '__main__':
                     else [(a1, b1, a2, mid), (a1, b1, mid, b2)])
         region_list.extend(children)
 
-        # visualize
-        fig, ax = plt.subplots(figsize=(10,8))
-        patches, errs = [], []
-        for reg in region_list:
-            u1, v1, u2, v2 = reg
-            patches.append(Rectangle((u1, u2), v1-u1, v2-u2))
-            e_ape, e_ae, *_ = max_error_info(*reg)
-            errs.append(max(e_ape, e_ae))
-        pc = PatchCollection(patches, cmap='coolwarm', alpha=0.6,
-                             edgecolor='black', linewidth=0.5)
-        pc.set_array(np.array(errs)); ax.add_collection(pc)
-        for reg, err in zip(region_list, errs):
-            u1, v1, u2, v2 = reg
-            ax.text((u1+v1)/2, (u2+v2)/2, f"{err:.1f}%",
-                    ha='center', va='center', color='white', fontsize=8)
-        for axn, x1r, x2r, y1r, y2r, m in split_history:
-            if axn=='x1': ax.plot([m,m], [y1r,y2r], 'r--')
-            else:         ax.plot([x1r,x2r], [m,m], 'r--')
-        fig.colorbar(pc, ax=ax, label='MaxErr (%)')
-        ax.set_xlim(X_MIN, X_MAX); ax.set_ylim(Y_MIN, Y_MAX); ax.set_aspect('auto')
-        # optional
-        ax.set_xscale('linear')
-        ax.set_yscale('log')
-        ax.set_title(f"Split {axis}@{mid:.2f}"); plt.tight_layout(); plt.show()
+        # # visualize
+        # fig, ax = plt.subplots(figsize=(10,8))
+        # patches, errs = [], []
+        # for reg in region_list:
+        #     u1, v1, u2, v2 = reg
+        #     patches.append(Rectangle((u1, u2), v1-u1, v2-u2))
+        #     e_ape, e_ae, *_ = max_error_info(*reg)
+        #     errs.append(max(e_ape, e_ae))
+        # pc = PatchCollection(patches, cmap='coolwarm', alpha=0.6,
+        #                      edgecolor='black', linewidth=0.5)
+        # pc.set_array(np.array(errs)); ax.add_collection(pc)
+        # for reg, err in zip(region_list, errs):
+        #     u1, v1, u2, v2 = reg
+        #     ax.text((u1+v1)/2, (u2+v2)/2, f"{err:.1f}%",
+        #             ha='center', va='center', color='white', fontsize=8)
+        # for axn, x1r, x2r, y1r, y2r, m in split_history:
+        #     if axn=='x1': ax.plot([m,m], [y1r,y2r], 'r--')
+        #     else:         ax.plot([x1r,x2r], [m,m], 'r--')
+        # fig.colorbar(pc, ax=ax, label='MaxErr (%)')
+        # ax.set_xlim(X_MIN, X_MAX); ax.set_ylim(Y_MIN, Y_MAX); ax.set_aspect('auto')
+        # # optional
+        # ax.set_xscale('linear')
+        # ax.set_yscale('log')
+        # ax.set_title(f"Split {axis}@{mid:.2f}"); plt.tight_layout(); plt.show()
 
         for child in children:
             c_ape, c_ae, ce_low, ce_up, c_pt, c_lf, c_uf = max_error_info(*child)
@@ -286,3 +378,26 @@ if __name__ == '__main__':
 
     # 3D final enclosure
     plot_final_approximation(final_leaves)
+
+    # --- build final_leaves after splitting completes ---
+    final_leaves = []
+    for (a1,b1,a2,b2), ape, ae, low_e, up_e, pt, low_fn, up_fn in leaves:
+        final_leaves.append({
+            'range':      (a1, b1, a2, b2),
+            'lower_expr': low_e,
+            'upper_expr': up_e
+        })
+   # generate combined if-else block (returns two strings)
+    cond_block = generate_c_conditions(final_leaves)
+
+    # read template, insert once
+    tpl = open(template).read()
+    out = tpl.replace('// INSERT_CONDITIONS_HERE', cond_block)
+
+    # write new file
+    out_file = template.replace('.c','_with_bounds.c')
+    with open(out_file,'w') as f:
+        f.write(out)
+    print(f"Generated {out_file}")
+
+    
