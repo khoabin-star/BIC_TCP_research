@@ -311,30 +311,30 @@ if __name__ == '__main__':
                     else [(a1, b1, a2, mid), (a1, b1, mid, b2)])
         region_list.extend(children)
 
-        # # visualize
-        # fig, ax = plt.subplots(figsize=(10,8))
-        # patches, errs = [], []
-        # for reg in region_list:
-        #     u1, v1, u2, v2 = reg
-        #     patches.append(Rectangle((u1, u2), v1-u1, v2-u2))
-        #     e_ape, e_ae, *_ = max_error_info(*reg)
-        #     errs.append(max(e_ape, e_ae))
-        # pc = PatchCollection(patches, cmap='coolwarm', alpha=0.6,
-        #                      edgecolor='black', linewidth=0.5)
-        # pc.set_array(np.array(errs)); ax.add_collection(pc)
-        # for reg, err in zip(region_list, errs):
-        #     u1, v1, u2, v2 = reg
-        #     ax.text((u1+v1)/2, (u2+v2)/2, f"{err:.1f}%",
-        #             ha='center', va='center', color='white', fontsize=8)
-        # for axn, x1r, x2r, y1r, y2r, m in split_history:
-        #     if axn=='x1': ax.plot([m,m], [y1r,y2r], 'r--')
-        #     else:         ax.plot([x1r,x2r], [m,m], 'r--')
-        # fig.colorbar(pc, ax=ax, label='MaxErr (%)')
-        # ax.set_xlim(X_MIN, X_MAX); ax.set_ylim(Y_MIN, Y_MAX); ax.set_aspect('auto')
-        # # optional
-        # ax.set_xscale('linear')
-        # ax.set_yscale('log')
-        # ax.set_title(f"Split {axis}@{mid:.2f}"); plt.tight_layout(); plt.show()
+        # visualize
+        fig, ax = plt.subplots(figsize=(10,8))
+        patches, errs = [], []
+        for reg in region_list:
+            u1, v1, u2, v2 = reg
+            patches.append(Rectangle((u1, u2), v1-u1, v2-u2))
+            e_ape, e_ae, *_ = max_error_info(*reg)
+            errs.append(max(e_ape, e_ae))
+        pc = PatchCollection(patches, cmap='coolwarm', alpha=0.6,
+                             edgecolor='black', linewidth=0.5)
+        pc.set_array(np.array(errs)); ax.add_collection(pc)
+        for reg, err in zip(region_list, errs):
+            u1, v1, u2, v2 = reg
+            ax.text((u1+v1)/2, (u2+v2)/2, f"{err:.1f}%",
+                    ha='center', va='center', color='white', fontsize=8)
+        for axn, x1r, x2r, y1r, y2r, m in split_history:
+            if axn=='x1': ax.plot([m,m], [y1r,y2r], 'r--')
+            else:         ax.plot([x1r,x2r], [m,m], 'r--')
+        fig.colorbar(pc, ax=ax, label='MaxErr (%)')
+        ax.set_xlim(X_MIN, X_MAX); ax.set_ylim(Y_MIN, Y_MAX); ax.set_aspect('auto')
+        # optional
+        ax.set_xscale('linear')
+        ax.set_yscale('log')
+        ax.set_title(f"Split {axis}@{mid:.2f}"); plt.tight_layout(); plt.show()
 
         for child in children:
             c_ape, c_ae, ce_low, ce_up, c_pt, c_lf, c_uf = max_error_info(*child)
